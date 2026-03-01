@@ -1,12 +1,11 @@
-'use strict';
-
 require('dotenv').config();
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
+const fccTestingRoutes = require('./routes/fcctesting.js');
 const apiRoutes = require('./routes/api.js');
+const runner = require('./test-runner');
 
 const app = express();
 
@@ -21,18 +20,33 @@ app.route('/')
     res.sendFile(process.cwd() + '/views/index.html');
   });
 
+// FCC testing
+fccTestingRoutes(app);
+
+// API routes
 apiRoutes(app);
 
+// 404
 app.use(function (req, res) {
-  res.status(404)
-    .type('text')
-    .send('Not Found');
+  res.status(404).type('text').send('Not Found');
 });
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, function () {
-  console.log("Listening on port " + PORT);
- });
+  console.log('Listening on port ' + PORT);
+
+  if (process.env.NODE_ENV === 'test') {
+    console.log('Running Tests...');
+    setTimeout(function () {
+      try {
+        runner.run();
+      } catch (error) {
+        console.log('Tests are not valid:');
+        console.error(error);
+      }
+    }, 1500);
+  }
+});
 
 module.exports = app;
